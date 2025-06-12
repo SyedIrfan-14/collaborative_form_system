@@ -29,6 +29,9 @@ app.get('/logout', (req, res) => {
   res.clearCookie('token').redirect('/login');
 });
 
+app.get('/health', (req, res) => res.send('OK'));
+
+
 require('./socket/socketHandler')(io);
 
 server.listen(process.env.PORT || 3000, () => console.log('Server running on port 3000'));
