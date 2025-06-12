@@ -2,7 +2,7 @@ const express = require('express');
 const { body } = require('express-validator');
 const router = express.Router();
 const { register, login, getUpdateCredentials, postUpdateCredentials, logout } = require('../controllers/authController');
-const { ensureAuth } = require('../middleware/auth'); // middleware to protect routes
+const { ensureAuth } = require('../middleware/auth');
 
 // Render registration page
 router.get('/register', (req, res) => res.render('register'));
@@ -14,6 +14,7 @@ router.get('/login', (req, res) => res.render('login'));
 router.post('/register',
   body('email').isEmail().withMessage('Invalid email address'),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  body('username').notEmpty().withMessage('Username is required'),
   register
 );
 
