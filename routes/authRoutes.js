@@ -32,14 +32,14 @@ app.get('/register', (req, res) => res.render('register'));
 // Register handler
 app.post('/register', async (req, res) => {
   try {
-    const { username, email, password } = req.body;
-    if (!username || !email || !password) {
+    const { username, dob, email, password } = req.body;
+    if (!username || !dob || !email || !password) {
       return res.render('register', { error: 'All fields are required' });
     }
     const hash = await bcrypt.hash(password, 10);
     await db.query(
-      'INSERT INTO Users (username, email, password_hash) VALUES (?, ?, ?)',
-      [username, email, hash]
+      'INSERT INTO Users (username, dob, email, password_hash) VALUES (?, ?, ?, ?)',
+      [username, dob, email, hash]
     );
     res.redirect('/login'); // Go to login page after registration
   } catch (err) {
@@ -64,42 +64,59 @@ app.post('/login', async (req, res) => {
     }
     const token = jwt.sign({ id: user.id }, secret, { expiresIn: '1h' });
     res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production' });
-    res.redirect('/update-credentials');
+    res.redirect('/welcome');
   } catch (err) {
     res.status(500).render('login', { error: 'Server error' });
   }
 });
 
-// Update credentials page (shows welcome message after login)
+// Welcome page after login, with update button
+app.get('/welcome', ensureAuth, async (req, res) => {
+  try {
+    const [users] = await db.query(
+      'SELECT username FROM Users WHERE id = ?',
+      [req.user.id]
+    );
+    if (!users[0]) return res.redirect('/login');
+    res.render('welcome', {
+      username: users[0].username
+    });
+  } catch (err) {
+    res.status(500).render('welcome', {
+      username: '',
+      error: 'Server error'
+    });
+  }
+});
+
+// Update credentials page
 app.get('/update-credentials', ensureAuth, async (req, res) => {
   try {
     const [users] = await db.query(
-      'SELECT username, email FROM Users WHERE id = ?',
+      'SELECT username, dob, email FROM Users WHERE id = ?',
       [req.user.id]
     );
     if (!users[0]) return res.redirect('/login');
     res.render('update-credentials', {
       user: users[0],
       error: null,
-      success: null,
-      welcomeMessage: `Welcome, ${users[0].username}!`
+      success: null
     });
   } catch (err) {
     res.status(500).render('update-credentials', {
       user: {},
       error: 'Server error',
-      success: null,
-      welcomeMessage: null
+      success: null
     });
   }
 });
 
-// Update credentials handler (shows success message)
+// Update credentials handler
 app.post('/update-credentials', ensureAuth, async (req, res) => {
   try {
-    const { username, email, password } = req.body;
-    let query = 'UPDATE Users SET username = ?, email = ?';
-    const params = [username, email];
+    const { username, dob, email, password } = req.body;
+    let query = 'UPDATE Users SET username = ?, dob = ?, email = ?';
+    const params = [username, dob, email];
     if (password && password.trim() !== '') {
       const hash = await bcrypt.hash(password, 10);
       query += ', password_hash = ?';
@@ -110,19 +127,17 @@ app.post('/update-credentials', ensureAuth, async (req, res) => {
 
     await db.query(query, params);
 
-    const [users] = await db.query('SELECT username, email FROM Users WHERE id = ?', [req.user.id]);
+    const [users] = await db.query('SELECT username, dob, email FROM Users WHERE id = ?', [req.user.id]);
     res.render('update-credentials', {
       user: users[0],
       error: null,
-      success: 'Credentials updated successfully!',
-      welcomeMessage: `Welcome, ${users[0].username}!`
+      success: 'Credentials updated successfully!'
     });
   } catch (err) {
     res.status(500).render('update-credentials', {
       user: req.body,
       error: 'Server error',
-      success: null,
-      welcomeMessage: null
+      success: null
     });
   }
 });
@@ -133,4 +148,6 @@ app.get('/logout', (req, res) => {
   res.redirect('/login');
 });
 
-// Serve static files and start server as needed...
+// You can add your server.listen() and static file serving as needed
+
+module.exports = app;
