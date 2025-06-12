@@ -1,0 +1,26 @@
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  margin: 0; padding: 0;
+  display: flex; justify-content: center; align-items: center;
+  height: 100vh;
+}
+.form-container {
+  width: 100%; display: flex; justify-content: center; align-items: center;
+}
+.form-box {
+  background: white; padding: 2em; border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.3); width: 400px; text-align: center;
+}
+input, button {
+  width: 100%; padding: 12px; margin: 12px 0;
+  font-size: 16px; border-radius: 6px; border: 1px solid #ccc;
+}
+button {
+  background: linear-gradient(to right, #2575fc, #6a11cb);
+  color: white; font-weight: bold; border: none; cursor: pointer;
+  transition: background 0.4s ease;
+}
+button:hover {
+  background: linear-gradient(to right, #6a11cb, #2575fc);
+}
