@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Welcome</title>
+</head>
+<body>
+  <h1>Welcome, <%= username %>!</h1>
+
+  <% if (error) { %>
+    <p style="color: red;"><%= error %></p>
+  <% } %>
+
+  <a href="/update-credentials">Update Credentials</a>
+  <br>
+  <a href="/logout">Logout</a>
+</body>
+</html>
