@@ -189,7 +189,7 @@ router.post('/register', async (req, res) => {
     if (err.code === 'ER_DUP_ENTRY') {
       return res.status(400).render('register', { error: 'Email already registered' });
     }
-    console.error('Register error:', err); // Log error for debugging
+    console.error('Register error:', err);
     res.status(500).render('register', { error: 'Server error' });
   }
 });
@@ -210,7 +210,7 @@ router.post('/login', async (req, res) => {
     res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production' });
     res.redirect('/welcome');
   } catch (err) {
-    console.error('Login error:', err); // Log error for debugging
+    console.error('Login error:', err);
     res.status(500).render('login', { error: 'Server error' });
   }
 });
@@ -222,8 +222,7 @@ router.get('/welcome', ensureAuth, async (req, res) => {
     if (!users[0]) return res.redirect('/login');
     res.render('welcome', { username: users[0].username, error: null });
   } catch (err) {
-    console.error('Welcome error:', err); // Log error for debugging
-    // Always provide username and error variables
+    console.error('Welcome error:', err);
     res.status(500).render('welcome', { username: '', error: 'Server error' });
   }
 });
@@ -236,14 +235,16 @@ router.get('/update-credentials', ensureAuth, async (req, res) => {
     res.render('update-credentials', {
       user: users[0],
       error: null,
-      success: null
+      success: null,
+      welcomeMessage: null
     });
   } catch (err) {
-    console.error('Update credentials page error:', err); // Log error for debugging
+    console.error('Update credentials page error:', err);
     res.status(500).render('update-credentials', {
       user: {},
       error: 'Server error',
-      success: null
+      success: null,
+      welcomeMessage: null
     });
   }
 });
@@ -268,14 +269,16 @@ router.post('/update-credentials', ensureAuth, async (req, res) => {
     res.render('update-credentials', {
       user: users[0],
       error: null,
-      success: 'Credentials updated successfully!'
+      success: 'Credentials updated successfully!',
+      welcomeMessage: null
     });
   } catch (err) {
-    console.error('Update credentials handler error:', err); // Log error for debugging
+    console.error('Update credentials handler error:', err);
     res.status(500).render('update-credentials', {
       user: req.body,
       error: 'Server error',
-      success: null
+      success: null,
+      welcomeMessage: null
     });
   }
 });
@@ -287,4 +290,6 @@ router.get('/logout', (req, res) => {
 });
 
 module.exports = router;
+
+
 
