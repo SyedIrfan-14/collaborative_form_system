@@ -1,58 +1,44 @@
-require('dotenv').config();
 const express = require('express');
 const http = require('http');
-const path = require('path');
-const bodyParser = require('body-parser');
-const cookieParser = require('cookie-parser');
 const { Server } = require('socket.io');
+const path = require('path');
 
 const app = express();
-const server = http.createServer(app);
 
-// In production, restrict the CORS origin to your domain for security
-const io = new Server(server, {
-  cors: {
-    origin: process.env.CORS_ORIGIN || '*', // Set CORS_ORIGIN in .env for production
-    methods: ['GET', 'POST']
-  }
-});
-
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
-
+// Set EJS as the template engine
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Routes
-app.use('/', require('./routes/authRoutes'));
-app.use('/api', require('./routes/formRoutes'));
+// Serve static files (optional, if you have CSS/JS)
+app.use(express.static(path.join(__dirname, 'public')));
 
-const { authenticate } = require('./middleware/auth');
+// Route for login, register, etc. (your existing routes)
 
-// Dashboard (protected)
-app.get('/dashboard', authenticate, (req, res) => {
-  res.send(`<h1>Welcome, User ${req.user.id}</h1><a href="/logout">Logout</a>`);
+// Route for collaborative form page
+app.get('/form', (req, res) => {
+  res.render('form');
 });
 
-// Logout
-app.get('/logout', (req, res) => {
-  res.clearCookie('token').redirect('/login');
+// Create HTTP server and bind Socket.IO
+const server = http.createServer(app);
+const io = new Server(server);
+
+// Socket.IO event handling
+io.on('connection', (socket) => {
+  console.log('A user connected:', socket.id);
+
+  socket.on('form_update', (data) => {
+    // Broadcast the update to all other clients except sender
+    socket.broadcast.emit('form_update', data);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('User disconnected:', socket.id);
+  });
 });
 
-// Health check
-app.get('/health', (req, res) => res.send('OK'));
-
-// Socket.IO handler
-require('./socket/socketHandler')(io);
-
-// Global error handler (for unhandled errors)
-app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err);
-  res.status(500).send('Internal Server Error');
+// Start the server
+const PORT = process.env.PORT || 8080;
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
-
-// Start server
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
