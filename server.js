@@ -1,41 +1,41 @@
 const express = require('express');
 const path = require('path');
-const cookieParser = require('cookie-parser');
-const session = require('express-session');
 const http = require('http');
-const { Server } = require('socket.io');
-require('dotenv').config();
+const cookieParser = require('cookie-parser');
+const dotenv = require('dotenv');
+const { ensureAuth } = require('./middleware/auth');
+const authRoutes = require('./routes/authRoutes'); // adjust if routes are in main file
+const db = require('./config/db'); // adjust as needed
 
-const authRoutes = require('./routes/authRoutes');
-const socketHandler = require('./socket/socketHandler');
+dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
+
+// --- Socket.io setup ---
+const { Server } = require('socket.io');
 const io = new Server(server);
+require('./socket/socketHandler')(io); // Pass io to your handler
 
-// Middleware
+// --- Express & Middleware ---
 app.use(express.urlencoded({ extended: false }));
-app.use(express.static(path.join(__dirname, 'public')));
 app.use(cookieParser());
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'your-session-secret',
-  resave: false,
-  saveUninitialized: false,
-  cookie: { secure: process.env.NODE_ENV === 'production' }
-}));
+app.use(express.static(path.join(__dirname, 'public')));
 
-// EJS setup
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Routes
-app.use('/', authRoutes);
+// --- Routes ---
+app.use('/', authRoutes); // If your auth routes are in a router
+// If you have all routes in server.js, you can skip this line
 
-// Socket.IO handler for real-time features
-socketHandler(io);
+// --- 404 Handler ---
+app.use((req, res) => {
+  res.status(404).render('404', { error: 'Page not found' });
+});
 
-// Start server
-const PORT = process.env.PORT || 8080;
+// --- Start Server ---
+const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on http://localhost:${PORT}`);
 });
