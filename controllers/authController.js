@@ -15,10 +15,10 @@ async function register(req, res) {
     res.redirect('/login');
   } catch (err) {
     if (err.code === 'ER_DUP_ENTRY') {
-      return res.status(400).send('Email already registered');
+      return res.status(400).render('register', { error: 'Email already registered' });
     }
     console.error('Registration error:', err);
-    res.status(500).send('Server error');
+    res.status(500).render('register', { error: 'Server error' });
   }
 }
 
@@ -28,13 +28,14 @@ async function login(req, res) {
     const [users] = await db.query('SELECT * FROM Users WHERE email = ?', [email]);
     const user = users[0];
     if (!user || !(await bcrypt.compare(password, user.password_hash))) {
-      return res.status(400).send('Invalid credentials');
+      // Render the login page with an error message
+      return res.render('login', { error: 'Invalid credentials' });
     }
     const token = jwt.sign({ id: user.id, role: user.role }, secret, { expiresIn: '1h' });
     res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production' }).redirect('/dashboard');
   } catch (err) {
     console.error('Login error:', err);
-    res.status(500).send('Server error');
+    res.status(500).render('login', { error: 'Server error' });
   }
 }
 
