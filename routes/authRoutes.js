@@ -3,17 +3,16 @@ const path = require('path');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
-const db = require('../config/db');// adjust as needed
-const app = express();
+const db = require('../config/db');
+const router = express.Router();
 
 const secret = process.env.JWT_SECRET;
 
-app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
+// Middleware
+router.use(express.urlencoded({ extended: false }));
+router.use(cookieParser());
 
-// Middleware to check authentication
+// --- Authentication Middleware ---
 function ensureAuth(req, res, next) {
   const token = req.cookies.token;
   if (!token) return res.redirect('/login');
@@ -26,11 +25,11 @@ function ensureAuth(req, res, next) {
   }
 }
 
-// Register page
-app.get('/register', (req, res) => res.render('register'));
+// --- Register Page ---
+router.get('/register', (req, res) => res.render('register'));
 
-// Register handler
-app.post('/register', async (req, res) => {
+// --- Register Handler ---
+router.post('/register', async (req, res) => {
   try {
     const { username, dob, email, password } = req.body;
     if (!username || !dob || !email || !password) {
@@ -41,7 +40,7 @@ app.post('/register', async (req, res) => {
       'INSERT INTO Users (username, dob, email, password_hash) VALUES (?, ?, ?, ?)',
       [username, dob, email, hash]
     );
-    res.redirect('/login'); // Go to login page after registration
+    res.redirect('/login');
   } catch (err) {
     if (err.code === 'ER_DUP_ENTRY') {
       return res.status(400).render('register', { error: 'Email already registered' });
@@ -50,11 +49,11 @@ app.post('/register', async (req, res) => {
   }
 });
 
-// Login page
-app.get('/login', (req, res) => res.render('login'));
+// --- Login Page ---
+router.get('/login', (req, res) => res.render('login'));
 
-// Login handler
-app.post('/login', async (req, res) => {
+// --- Login Handler ---
+router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     const [users] = await db.query('SELECT * FROM Users WHERE email = ?', [email]);
@@ -70,17 +69,12 @@ app.post('/login', async (req, res) => {
   }
 });
 
-// Welcome page after login, with update button
-app.get('/welcome', ensureAuth, async (req, res) => {
+// --- Welcome Page ---
+router.get('/welcome', ensureAuth, async (req, res) => {
   try {
-    const [users] = await db.query(
-      'SELECT username FROM Users WHERE id = ?',
-      [req.user.id]
-    );
+    const [users] = await db.query('SELECT username FROM Users WHERE id = ?', [req.user.id]);
     if (!users[0]) return res.redirect('/login');
-    res.render('welcome', {
-      username: users[0].username
-    });
+    res.render('welcome', { username: users[0].username });
   } catch (err) {
     res.status(500).render('welcome', {
       username: '',
@@ -89,13 +83,10 @@ app.get('/welcome', ensureAuth, async (req, res) => {
   }
 });
 
-// Update credentials page
-app.get('/update-credentials', ensureAuth, async (req, res) => {
+// --- Update Credentials Page ---
+router.get('/update-credentials', ensureAuth, async (req, res) => {
   try {
-    const [users] = await db.query(
-      'SELECT username, dob, email FROM Users WHERE id = ?',
-      [req.user.id]
-    );
+    const [users] = await db.query('SELECT username, dob, email FROM Users WHERE id = ?', [req.user.id]);
     if (!users[0]) return res.redirect('/login');
     res.render('update-credentials', {
       user: users[0],
@@ -111,8 +102,8 @@ app.get('/update-credentials', ensureAuth, async (req, res) => {
   }
 });
 
-// Update credentials handler
-app.post('/update-credentials', ensureAuth, async (req, res) => {
+// --- Update Handler ---
+router.post('/update-credentials', ensureAuth, async (req, res) => {
   try {
     const { username, dob, email, password } = req.body;
     let query = 'UPDATE Users SET username = ?, dob = ?, email = ?';
@@ -142,12 +133,10 @@ app.post('/update-credentials', ensureAuth, async (req, res) => {
   }
 });
 
-// Logout
-app.get('/logout', (req, res) => {
+// --- Logout ---
+router.get('/logout', (req, res) => {
   res.clearCookie('token');
   res.redirect('/login');
 });
 
-// You can add your server.listen() and static file serving as needed
-
-module.exports = app;
+module.exports = router;
