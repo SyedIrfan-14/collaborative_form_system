@@ -3,7 +3,7 @@ const path = require('path');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
-const db = require('./config/db'); // adjust as needed
+const db = require('../config/db');// adjust as needed
 const app = express();
 
 const secret = process.env.JWT_SECRET;
