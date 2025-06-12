@@ -13,7 +13,6 @@ if (process.env.MYSQL_URL) {
     port: dbUrl.port || 3306,
   });
 } else {
-  // fallback if using individual DB_ variables
   db = mysql.createPool({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
@@ -22,5 +21,17 @@ if (process.env.MYSQL_URL) {
     port: process.env.DB_PORT || 3306,
   });
 }
+
+// Optional: Test connection at startup
+(async () => {
+  try {
+    const conn = await db.getConnection();
+    await conn.ping();
+    console.log('MySQL connection established successfully.');
+    conn.release();
+  } catch (err) {
+    console.error('MySQL connection failed:', err.message);
+  }
+})();
 
 module.exports = db;
