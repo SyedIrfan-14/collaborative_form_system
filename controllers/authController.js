@@ -44,16 +44,20 @@ async function login(req, res) {
 // Render update credentials page (GET)
 async function getUpdateCredentials(req, res) {
   try {
-    // Extract user id from JWT token in cookies
     const token = req.cookies.token;
     if (!token) return res.redirect('/login');
     const decoded = jwt.verify(token, secret);
     const [users] = await db.query('SELECT username, email FROM Users WHERE id = ?', [decoded.id]);
     if (!users[0]) return res.redirect('/login');
-    res.render('update-credentials', { user: users[0], error: null, success: null });
+    res.render('update-credentials', { 
+      user: users[0], 
+      error: null, 
+      success: null,
+      welcomeMessage: `Welcome, ${users[0].username}!`
+    });
   } catch (err) {
     console.error('Get update credentials error:', err);
-    res.redirect('/login');
+    res.status(500).render('update-credentials', { user: {}, error: 'Server error', success: null, welcomeMessage: null });
   }
 }
 
@@ -65,7 +69,6 @@ async function postUpdateCredentials(req, res) {
     const decoded = jwt.verify(token, secret);
     const { username, email, password } = req.body;
 
-    // Prepare update query
     let query = 'UPDATE Users SET username = ?, email = ?';
     const params = [username, email];
     if (password && password.trim() !== '') {
@@ -78,16 +81,20 @@ async function postUpdateCredentials(req, res) {
 
     await db.query(query, params);
 
-    // Fetch updated user info
     const [users] = await db.query('SELECT username, email FROM Users WHERE id = ?', [decoded.id]);
-    res.render('update-credentials', { user: users[0], error: null, success: 'Credentials updated successfully!' });
+    res.render('update-credentials', { 
+      user: users[0], 
+      error: null, 
+      success: 'Credentials updated successfully!',
+      welcomeMessage: `Welcome, ${users[0].username}!`
+    });
   } catch (err) {
     console.error('Update credentials error:', err);
-    res.status(500).render('update-credentials', { user: req.body, error: 'Server error', success: null });
+    res.status(500).render('update-credentials', { user: req.body, error: 'Server error', success: null, welcomeMessage: null });
   }
 }
 
-// Logout controller (optional)
+// Logout controller
 function logout(req, res) {
   res.clearCookie('token');
   res.redirect('/login');
